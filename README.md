@@ -1,5 +1,5 @@
 # WeatherUp
-"I. Project Description 
+I. Project Description 
 A. App Name: WeatherUp 
 B. Overview: WeatherUp is a weather app for Android that provides accurate and up-to-date weather information to users. 
 C. Target Audience: People who want to check weather conditions before going out or planning their day. 
