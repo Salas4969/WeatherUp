@@ -1,4 +1,4 @@
-# WeatherUp
+# WeatherUp 
 I. Project Description 
 A. App Name: WeatherUp 
 B. Overview: WeatherUp is a weather app for Android that provides accurate and up-to-date weather information to users. 
