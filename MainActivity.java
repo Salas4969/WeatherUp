@@ -1,92 +1,127 @@
-import android.os.Bundle;
-import android.widget.TextView;
+public class WeatherActivity extends AppCompatActivity {
 
-import androidx.appcompat.app.AppCompatActivity;
+    private EditText cityEditText;
+    private TextView cityTextView;
+    private TextView temperatureTextView;
+    private ImageView weatherIconImageView;
+    private TextView descriptionTextView;
+    private TextView humidityTextView;
+    private TextView windTextView;
+    private TextView pressureTextView;
+    private RecyclerView forecastRecyclerView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-
-public class MainActivity extends AppCompatActivity {
-
-    private static final String API_KEY = "04cfc26e70fc446a9dc26c29fb9e8eac";
-    private static final String CITY_NAME = "New York";
-    private static final String API_URL = "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s";
-
-    private TextView mTodayTempTextView;
-    private TextView mTodayWeatherDescTextView;
-    private TextView mTodayDateTextView;
-    private TextView mTomorrowTempTextView;
-    private TextView mTomorrowWeatherDescTextView;
-    private TextView mTomorrowDateTextView;
-    private TextView mFiveDayTextView;
+    private ForecastAdapter forecastAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_weather);
 
-        mTodayTempTextView = findViewById(R.id.today_temp_textview);
-        mTodayWeatherDescTextView = findViewById(R.id.today_weather_desc_textview);
-        mTodayDateTextView = findViewById(R.id.today_date_textview);
-        mTomorrowTempTextView = findViewById(R.id.tomorrow_temp_textview);
-        mTomorrowWeatherDescTextView = findViewById(R.id.tomorrow_weather_desc_textview);
-        mTomorrowDateTextView = findViewById(R.id.tomorrow_date_textview);
-        mFiveDayTextView = findViewById(R.id.five_day_textview);
+        cityEditText = findViewById(R.id.cityEditText);
+        cityTextView = findViewById(R.id.cityTextView);
+        temperatureTextView = findViewById(R.id.temperatureTextView);
+        weatherIconImageView = findViewById(R.id.weatherIconImageView);
+        descriptionTextView = findViewById(R.id.descriptionTextView);
+        humidityTextView = findViewById(R.id.humidityTextView);
+        windTextView = findViewById(R.id.windTextView);
+        pressureTextView = findViewById(R.id.pressureTextView);
+        forecastRecyclerView = findViewById(R.id.forecastRecyclerView);
 
-        getCurrentWeather();
-        getFiveDayForecast();
-    }
+        forecastAdapter = new ForecastAdapter();
+        forecastRecyclerView.setAdapter(forecastAdapter);
 
-    private void getCurrentWeather() {
-        String url = String.format(API_URL, CITY_NAME, API_KEY);
+        String apiKey = "04cfc26e70fc446a9dc26c29fb9e8eac";
 
-        HttpHandler httpHandler = new HttpHandler();
-        String jsonStr = httpHandler.makeServiceCall(url);
+        Button searchButton = findViewById(R.id.searchButton);
+        searchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String city = cityEditText.getText().toString();
+                String apiUrl = "https://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + apiKey;
 
-        if (jsonStr != null) {
-            try {
-                JSONObject jsonObj = new JSONObject(jsonStr);
+                RequestQueue queue = Volley.newRequestQueue(WeatherActivity.this);
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, apiUrl, null,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                try {
+                                    JSONObject main = response.getJSONObject("main");
+                                    JSONArray weatherArray = response.getJSONArray("weather");
+                                    JSONObject weather = weatherArray.getJSONObject(0);
+                                    JSONObject wind = response.getJSONObject("wind");
 
-                JSONArray weatherArr = jsonObj.getJSONArray("list");
+                                    String temperature = String.format(Locale.getDefault(), "%.0f°C", main.getDouble("temp") - 273.15);
+                                    String description = weather.getString("description");
+                                    String iconCode = weather.getString("icon");
+                                    String humidity = String.format(Locale.getDefault(), "%d%%", main.getInt("humidity"));
+                                    String windSpeed = String.format(Locale.getDefault(), "%.1f km/h", wind.getDouble("speed") * 3.6);
+                                    String pressure = String.format(Locale.getDefault(), "%d hPa", main.getInt("pressure"));
 
-                // Get today's weather data
-                JSONObject todayWeatherObj = weatherArr.getJSONObject(0);
-                JSONObject todayMainObj = todayWeatherObj.getJSONObject("main");
-                JSONArray todayWeatherJsonArr = todayWeatherObj.getJSONArray("weather");
-                JSONObject todayWeatherJsonObj = todayWeatherJsonArr.getJSONObject(0);
+                                    cityTextView.setText(city);
+                                    temperatureTextView.setText(temperature);
+                                    descriptionTextView.setText(description);
+                                    humidityTextView.setText(humidity);
+                                    windTextView.setText(windSpeed);
+                                    pressureTextView.setText(pressure);
 
-                // Display today's weather data
-                double todayTemp = todayMainObj.getDouble("temp");
-                String todayTempStr = String.format("%.0f\u00B0", todayTemp);
-                mTodayTempTextView.setText(todayTempStr);
+                                    int resourceId = getResources().getIdentifier("ic_" + iconCode, "drawable", getPackageName());
+                                    weatherIconImageView.setImageResource(resourceId);
 
-                String todayWeatherDesc = todayWeatherJsonObj.getString("description");
-                mTodayWeatherDescTextView.setText(todayWeatherDesc);
+                                    // Fetch forecast data
+                                    String forecastApiUrl = "https://api.openweathermap.org/data/2.5/forecast?q=" + city + "&appid=" + apiKey;
+                                    JsonObjectRequest forecastJsonObjectRequest = new JsonObjectRequest(Request.Method.GET, forecastApiUrl, null,
+                                            new Response.Listener<JSONObject>() {
+                                                @Override
+                                                public void onResponse(JSONObject response) {
+                                                    try {
+                                                        JSONArray forecastList = response.getJSONArray("list");
+                                                        List<Forecast> forecasts = new ArrayList<>();
+                                                        for (int i = 0; i < forecastList.length(); i += 8) {
+                                                            JSONObject forecastItem = forecastList.getJSONObject(i);
+                                                            JSONObject main = forecastItem.getJSONObject("main");
+                                                            JSONArray weatherArray = forecastItem.getJSONArray("weather");
+                                                                                                                    JSONObject weather = weatherArray.getJSONObject(0);
 
-                String todayDateStr = getFormattedDate(todayWeatherObj.getLong("dt"));
-                mTodayDateTextView.setText(todayDateStr);
+                                                        String date = forecastItem.getString("dt_txt").substring(0, 10);
+                                                        String temperature = String.format(Locale.getDefault(), "%.0f°C", main.getDouble("temp") - 273.15);
+                                                        String description = weather.getString("description");
+                                                        String iconCode = weather.getString("icon");
 
-                // Get tomorrow's weather data
-                JSONObject tomorrowWeatherObj = weatherArr.getJSONObject(8);
-                JSONObject tomorrowMainObj = tomorrowWeatherObj.getJSONObject("main");
-                JSONArray tomorrowWeatherJsonArr = tomorrowWeatherObj.getJSONArray("weather");
-                JSONObject tomorrowWeatherJsonObj = tomorrowWeatherJsonArr.getJSONObject(0);
+                                                        int resourceId = getResources().getIdentifier("ic_" + iconCode, "drawable", getPackageName());
+                                                        Forecast forecast = new Forecast(date, temperature, description, resourceId);
+                                                        forecasts.add(forecast);
+                                                    }
 
-                // Display tomorrow's weather data
-                double tomorrowTemp = tomorrowMainObj.getDouble("temp");
-                String tomorrowTempStr = String.format("%.0f\u00B0", tomorrowTemp);
-                mTomorrowTempTextView.setText(tomorrowTempStr);
+                                                    forecastAdapter.setForecasts(forecasts);
+                                                    forecastAdapter.notifyDataSetChanged();
 
-                String tomorrowWeatherDesc = tomorrowWeatherJsonObj.getString("description");
-                mTomorrowWeatherDescTextView.setText(tomorrowWeatherDesc);
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }, new Response.ErrorListener() {
+                                    @Override
+                                    public void onErrorResponse(VolleyError error) {
+                                        Toast.makeText(WeatherActivity.this, "Error fetching forecast data", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
 
-                String tomorrowDateStr = getFormattedDate(tomorrowWeatherObj.getLong("dt"));
-                mTomorrowDateTextView.setText(tomorrowDateStr);
+                                queue.add(forecastJsonObjectRequest);
 
-            } catch (final JSONException e) {
-                e.printStackTrace();
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(WeatherActivity.this, "Error fetching weather data", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            queue.add(jsonObjectRequest);
+        }
+    });
+}
+
+
