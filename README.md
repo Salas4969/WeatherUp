@@ -70,4 +70,4 @@ B. Hourly Forecast Screen: Provides a detailed hourly forecast for the next 24 h
 C. Daily Forecast Screen: Displays a 7-day forecast with high and low temperatures, chance of precipitation, and wind speed.
 D. Settings Screen: Allows users to customize their app experience, such as changing temperature units, enabling push notifications, and managing stored locations and shared weather information.
 
-Overall, WeatherUp has undergone significant updates to enhance its functionality and design. Cloud integration, dynamic weather-based design, and the ability to store multiple cities and share weather information with contacts have been added. The app remains committed to providing accurate and real-time weather information while maintaining a user-friendly interface
+Overall, WeatherUp has undergone significant updates to enhance its functionality and design. Cloud integration, dynamic weather-based design, and the ability to store multiple cities and share weather information with contacts have been added. The app remains committed to providing accurate and real-time weather information while maintaining a user-friendly interface 
